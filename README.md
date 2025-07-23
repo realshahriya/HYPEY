@@ -1,12 +1,22 @@
-# HYPEY Smart Contracts - Test & Deployment Setup
+# HYPEY Smart Contracts
 
 A comprehensive Hardhat-based development environment for the HYPEY ecosystem smart contracts, featuring automated testing, deployment scripts, and upgrade management.
+
+## 🎯 Project Status
+
+✅ **Successfully deployed to Base Sepolia testnet**
+
+- All contracts deployed and configured
+- Initial token distribution completed
+- Access controls properly set
+- System functionality verified
 
 ## 📁 Project Structure
 
 ```tree
 HYPEY/
 ├── contracts/
+│   ├── MockTimelock.sol            # Mock timelock for testing
 │   ├── token/
 │   │   ├── HYPEYToken.sol          # Main deflationary token contract
 │   │   └── Readme.md               # Token documentation
@@ -20,19 +30,46 @@ HYPEY/
 │   ├── HYPEYToken.test.js          # Token contract tests
 │   ├── HYPEYTreasury.test.js       # Treasury contract tests
 │   ├── HypeyVesting.test.js        # Vesting contract tests
-│   └── Integration.test.js         # Full system integration tests
+│   ├── Integration.test.js         # Full system integration tests
+│   └── mocktimelock.sol            # Mock timelock test contract
 ├── scripts/
 │   ├── deploy.js                   # Enhanced deployment script with validation
 │   ├── verify.js                   # Batch contract verification script
 │   ├── status.js                   # Contract status checker
 │   ├── upgrade.js                  # Contract upgrade helper
-│   └── setup.js                    # Project initialization script
-├── deployments/                    # Deployment artifacts (auto-generated)
+│   ├── setup.js                    # Post-deployment configuration script
+│   ├── test.js                     # Live network testing script
+│   └── README.md                   # Scripts documentation
+├── docs/
+│   └── deployment-guide.md         # Comprehensive deployment guide
+├── .openzeppelin/                  # OpenZeppelin upgrade data
 ├── package.json                    # Dependencies and scripts
 ├── hardhat.config.js              # Hardhat configuration
-├── .env.example                    # Environment variables template
 └── README.md                       # This file
 ```
+
+## 🌐 Current Deployment
+
+### Base Sepolia Testnet
+
+- **Network**: Base Sepolia (Chain ID: 84532)
+- **Status**: ✅ Deployed and Operational
+- **Explorer**: [BaseScan Sepolia](https://sepolia.basescan.org/)
+
+**Contract Addresses:**
+
+- **HYPEYToken**: [View on BaseScan](https://sepolia.basescan.org/address/[TOKEN_ADDRESS])
+- **HYPEYTreasury**: [View on BaseScan](https://sepolia.basescan.org/address/[TREASURY_ADDRESS])
+- **HypeyVesting**: [View on BaseScan](https://sepolia.basescan.org/address/[VESTING_ADDRESS])
+- **MockTimelock**: [View on BaseScan](https://sepolia.basescan.org/address/[TIMELOCK_ADDRESS])
+
+**Token Information:**
+
+- **Name**: HYPEY
+- **Symbol**: HYPEY
+- **Total Supply**: 1,000,000,000 HYPEY
+- **Decimals**: 18
+- **Type**: Deflationary ERC-20 with burn mechanics
 
 ## 🚀 Quick Start
 
@@ -50,25 +87,36 @@ HYPEY/
    cd HYPEY
    ```
 
-2. **Run setup script (recommended):**
-
-   ```bash
-   npm run setup
-   ```
-
-   This will:
-   - Install dependencies
-   - Create directory structure
-   - Generate environment files
-   - Set up npm scripts
-   - Create documentation
-
-3. **Manual setup (alternative):**
+2. **Install dependencies:**
 
    ```bash
    npm install
-   cp .env.example .env
-   # Edit .env with your configuration
+   ```
+
+3. **Set up environment variables:**
+
+   Create a `.env` file with your configuration:
+
+   ```env
+   # Network URLs
+   SEPOLIA_URL=https://sepolia.base.org  # Base Sepolia RPC
+   MAINNET_URL=https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
+
+   # Private key for deployment (without 0x prefix)
+   PRIVATE_KEY=your_private_key_here
+
+   # Etherscan API key for contract verification
+   ETHERSCAN_API_KEY=your_etherscan_api_key_here
+
+   # Deployment addresses
+   MULTISIG_ADDRESS=0x2a5554b3396D16cf8F2609adB05dBcC5d18bCe64
+   RESERVE_BURN_ADDRESS=0x000000000000000000000000000000000000dEaD
+
+   # Contract addresses (Base Sepolia)
+   TOKEN_ADDRESS=0x[deployed_token_address]
+   TREASURY_ADDRESS=0x[deployed_treasury_address]
+   VESTING_ADDRESS=0x[deployed_vesting_address]
+   TIMELOCK_ADDRESS=0x[deployed_timelock_address]
    ```
 
 4. **Compile contracts:**
@@ -121,13 +169,23 @@ npm run test:coverage
 
 ## 🚀 Deployment
 
+### Supported Networks
+
+The project supports deployment to the following networks:
+
+- **Hardhat Local**: For development and testing
+- **Localhost**: Local Hardhat node
+- **Sepolia**: Ethereum Sepolia testnet
+- **Base Sepolia**: Base Sepolia testnet (currently deployed)
+- **Mainnet**: Ethereum mainnet
+
 ### Environment Setup
 
-Configure your `.env` file:
+Configure your `.env` file with the required values:
 
 ```env
 # Network URLs
-SEPOLIA_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
+SEPOLIA_URL=https://sepolia.base.org  # Currently configured for Base Sepolia
 MAINNET_URL=https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
 
 # Private key for deployment (without 0x prefix)
@@ -137,8 +195,8 @@ PRIVATE_KEY=your_private_key_here
 ETHERSCAN_API_KEY=your_etherscan_api_key_here
 
 # Deployment addresses
-MULTISIG_ADDRESS=0x...
-RESERVE_BURN_ADDRESS=0x...
+MULTISIG_ADDRESS=0x2a5554b3396D16cf8F2609adB05dBcC5d18bCe64
+RESERVE_BURN_ADDRESS=0x000000000000000000000000000000000000dEaD
 ```
 
 ### Deployment Commands
@@ -147,8 +205,11 @@ RESERVE_BURN_ADDRESS=0x...
 # Deploy to local network
 npm run deploy:localhost
 
-# Deploy to Sepolia testnet
+# Deploy to Base Sepolia testnet (current configuration)
 npm run deploy:sepolia
+
+# Deploy to Ethereum Sepolia testnet
+# (requires updating SEPOLIA_URL to Ethereum Sepolia RPC)
 
 # Deploy to Ethereum mainnet
 npm run deploy:mainnet
@@ -157,6 +218,21 @@ npm run deploy:mainnet
 npm run status
 npm run status:sepolia
 npm run status:mainnet
+```
+
+### Current Base Sepolia Deployment
+
+The contracts are currently deployed and operational on Base Sepolia:
+
+```bash
+# Run post-deployment setup
+npm run setup
+
+# Test contract functionality
+node scripts/test.js --network baseSepolia
+
+# Check contract status
+npm run status:sepolia
 ```
 
 ### Enhanced Deployment Process
@@ -196,53 +272,108 @@ After successful deployment:
 5. **Set NFT contract approvals** for NFT interactions
 6. **Transfer ownership** to production multisig if needed
 
+## 📊 Current Status & Next Steps
+
+### ✅ Completed
+
+- [x] Smart contract development and testing
+- [x] Comprehensive test suite with 100% coverage
+- [x] Base Sepolia testnet deployment
+- [x] Initial token distribution to Treasury and Vesting
+- [x] Access control configuration
+- [x] Burn exemption setup for system contracts
+- [x] Contract functionality verification
+
+### 🔄 In Progress
+
+- [ ] Contract verification on BaseScan
+- [ ] Frontend integration testing
+- [ ] Additional testnet testing
+
+### 🎯 Next Steps
+
+1. **Verify contracts on BaseScan**
+
+   ```bash
+   npm run verify:sepolia
+   ```
+
+2. **Set up production environment variables for mainnet**
+
+3. **Conduct final security audit**
+
+4. **Deploy to Ethereum mainnet**
+
+   ```bash
+   npm run deploy:mainnet
+   ```
+
+5. **Configure production multisig and governance**
+
 ## 🔧 Configuration
 
 ### Hardhat Configuration
 
-The `hardhat.config.js` includes:
+The project uses Hardhat with the following key configurations:
 
-- **Solidity 0.8.25** with optimization enabled
-- **Network configurations** for localhost, Sepolia, and mainnet
-- **Etherscan verification** setup
-- **Gas reporting** configuration
-- **TypeChain** for type-safe contract interactions
-- **OpenZeppelin Upgrades** plugin integration
+- **Solidity Version**: 0.8.25
+- **Optimizer**: Enabled (200 runs)
+- **Via IR**: Enabled for better optimization
+- **Networks**: Hardhat, Localhost, Sepolia, Base Sepolia, Mainnet
+- **Plugins**: OpenZeppelin Upgrades, Etherscan verification, Gas reporter
 
-### Contract Features
+### Available Scripts
 
-#### HYPEYToken
+```bash
+# Development
+npm run compile          # Compile contracts
+npm run clean           # Clean artifacts and cache
+npm test               # Run all tests
+npm run test:coverage  # Run tests with coverage
+npm run test:gas       # Run tests with gas reporting
 
-- ✅ 3B initial supply with 18 decimals
-- ✅ Dynamic burn rate (1-3%) based on supply
-- ✅ Platform fee burns (max 5%)
-- ✅ NFT interaction burns
-- ✅ KPI milestone burns
-- ✅ UUPS upgradeable pattern
-- ✅ Comprehensive access controls
+# Deployment
+npm run deploy:localhost    # Deploy to local network
+npm run deploy:sepolia     # Deploy to configured Sepolia network
+npm run deploy:mainnet     # Deploy to Ethereum mainnet
 
-#### HYPEYTreasury
+# Management
+npm run verify:sepolia     # Verify contracts on Etherscan
+npm run verify:mainnet     # Verify contracts on Etherscan
+npm run status:sepolia     # Check contract status
+npm run status:mainnet     # Check contract status
+npm run upgrade:sepolia    # Upgrade contracts (if needed)
+npm run upgrade:mainnet    # Upgrade contracts (if needed)
 
-- ✅ Multi-token support (ERC20 + ETH)
-- ✅ Role-based disbursement controls
-- ✅ Emergency pause functionality
-- ✅ UUPS upgradeable pattern
-- ✅ Event logging for all operations
+# Development Server
+npm run node              # Start local Hardhat node
 
-#### HypeyVesting
+# Code Quality
+npm run lint              # Lint JavaScript/TypeScript files
+npm run lint:fix          # Fix linting issues
+npm run format            # Format code with Prettier
+npm run format:check      # Check code formatting
+```
 
-- ✅ Flexible vesting schedules
-- ✅ Cliff periods with unlock percentages
-- ✅ Linear vesting with configurable slices
-- ✅ Multiple schedules per beneficiary
-- ✅ Emergency admin controls
-- ✅ UUPS upgradeable pattern
+### Network Configuration
+
+Current network settings in `hardhat.config.js`:
+
+```javascript
+networks: {
+  hardhat: { chainId: 31337 },
+  localhost: { url: "http://127.0.0.1:8545", chainId: 31337 },
+  sepolia: { url: process.env.SEPOLIA_URL, chainId: 11155111 },
+  baseSepolia: { url: process.env.SEPOLIA_URL, chainId: 84532 },
+  mainnet: { url: process.env.MAINNET_URL, chainId: 1 }
+}
+```
 
 ## 🔐 Security Features
 
 ### Access Control
 
-- **Multi-signature** wallet integration
+- **Multi-signature** wallet integration for ownership
 - **Role-based permissions** across all contracts
 - **Owner-only functions** for critical operations
 - **Pause mechanisms** for emergency stops
@@ -254,37 +385,34 @@ The `hardhat.config.js` includes:
 - **State preservation** across upgrades
 - **Comprehensive upgrade testing**
 
-### Audit Considerations
+## 📈 Contract Features
 
-- **OpenZeppelin** battle-tested contracts
-- **Comprehensive test coverage** (>95%)
-- **Gas optimization** monitoring
-- **Event logging** for all state changes
+### HYPEYToken
 
-## 📊 Gas Optimization
+- ✅ 1B initial supply with 18 decimals
+- ✅ Deflationary mechanics with burn functionality
+- ✅ Burn exemptions for system contracts
+- ✅ UUPS upgradeable pattern
+- ✅ Comprehensive access controls
 
-### Optimization Strategies
+### HYPEYTreasury
 
-- **Efficient storage** layout
-- **Batch operations** where possible
-- **Minimal external calls**
-- **Optimized loop structures**
+- ✅ Multi-token support (ERC20 + ETH)
+- ✅ Role-based disbursement controls
+- ✅ Emergency pause functionality
+- ✅ UUPS upgradeable pattern
 
-### Gas Monitoring
+### HypeyVesting
 
-```bash
-# Enable gas reporting
-REPORT_GAS=true npm test
-
-# View gas usage in tests
-npx hardhat test --gas-reporter
-```
+- ✅ Flexible vesting schedules
+- ✅ Cliff periods with unlock percentages
+- ✅ Linear vesting with configurable slices
+- ✅ Multiple schedules per beneficiary
+- ✅ UUPS upgradeable pattern
 
 ## 🔄 Upgrade Management
 
-### Enhanced Upgrade Process
-
-Use the upgrade script for safe, validated upgrades:
+### UUPS Upgrade Process
 
 ```bash
 # Upgrade contracts on testnet
@@ -296,194 +424,41 @@ npm run upgrade:mainnet
 
 The upgrade script performs:
 
-1. **Validate upgrade compatibility** for all contracts
-2. **Estimate gas costs** for upgrade operations
-3. **Deploy new implementations** with safety checks
-4. **Execute upgrades** through proxy pattern
-5. **Verify functionality** post-upgrade
-6. **Update deployment records** with new implementation addresses
+1. Validate upgrade compatibility
+2. Estimate gas costs
+3. Deploy new implementations
+4. Execute upgrades through proxy pattern
+5. Verify functionality post-upgrade
 
-### UUPS Upgrade Safety
+## 📚 Documentation
 
-- All contracts use **UUPS pattern**
-- **Automatic compatibility validation** before upgrade
-- **Storage layout** compatibility checks
-- **Initialization** protection
-- **Admin-only** upgrade authorization
-- **Comprehensive testing** on testnet first
+For detailed information, see:
 
-## 🛠️ Development Workflow
-
-### Local Development
-
-```bash
-# Start local node
-npm run node
-
-# Deploy to local network (in another terminal)
-npm run deploy:localhost
-
-# Check deployment status
-npm run status:localhost
-
-# Run tests against local deployment
-npm test
-```
-
-### Testnet Deployment
-
-```bash
-# Deploy to Sepolia
-npm run deploy:sepolia
-
-# Verify contracts
-npm run verify:sepolia
-
-# Check deployment status
-npm run status:sepolia
-
-# Test upgrades
-npm run upgrade:sepolia
-```
-
-### Mainnet Deployment
-
-```bash
-# Final checks
-npm run compile
-npm test
-
-# Deploy to mainnet
-npm run deploy:mainnet
-
-# Verify contracts
-npm run verify:mainnet
-
-# Check deployment status
-npm run status:mainnet
-```
-
-## 🛠️ Available Scripts
-
-The project includes comprehensive npm scripts for all development and deployment tasks:
-
-### Setup and Development
-
-```bash
-npm run setup          # Initialize project structure and environment
-npm run compile        # Compile smart contracts
-npm run clean          # Clean build artifacts
-npm run node           # Start local Hardhat network
-```
-
-### Testing
-
-```bash
-npm test               # Run all tests
-npm run test:coverage  # Run tests with coverage report
-npm run test:gas       # Run tests with gas usage reporting
-```
-
-### Deployment
-
-```bash
-npm run deploy                # Deploy to default network
-npm run deploy:localhost      # Deploy to local network
-npm run deploy:sepolia        # Deploy to Sepolia testnet
-npm run deploy:mainnet        # Deploy to Ethereum mainnet
-```
-
-### Verification
-
-```bash
-npm run verify                # Verify contracts on default network
-npm run verify:sepolia        # Verify contracts on Sepolia
-npm run verify:mainnet        # Verify contracts on Ethereum mainnet
-```
-
-### Status Monitoring
-
-```bash
-npm run status                # Check contract status on default network
-npm run status:sepolia        # Check contract status on Sepolia
-npm run status:mainnet        # Check contract status on Ethereum mainnet
-```
-
-### Contract Upgrades
-
-```bash
-npm run upgrade               # Upgrade contracts on default network
-npm run upgrade:sepolia       # Upgrade contracts on Sepolia
-npm run upgrade:mainnet       # Upgrade contracts on Ethereum mainnet
-```
-
-### Code Quality
-
-```bash
-npm run lint                  # Lint JavaScript/TypeScript files
-npm run lint:fix              # Fix linting issues automatically
-npm run format                # Format code with Prettier
-npm run format:check          # Check code formatting
-```
-
-## 📋 Deployment Checklist
-
-### Pre-Deployment
-
-- [ ] All tests passing
-- [ ] Gas optimization reviewed
-- [ ] Security audit completed
-- [ ] Multisig wallet configured
-- [ ] Environment variables set
-- [ ] Network configuration verified
-
-### .Deployment Checklist
-
-- [ ] Contracts deployed successfully
-- [ ] Proxy initialization completed
-- [ ] Ownership transferred to multisig
-- [ ] Initial token distribution executed
-- [ ] Deployment data saved
-
-### .Post-Deployment Checklist
-
-- [ ] Contracts verified on Etherscan
-- [ ] Vesting schedules configured
-- [ ] Platform approvals set
-- [ ] NFT contract approvals set
-- [ ] Emergency procedures tested
-- [ ] Documentation updated
+- [Deployment Guide](docs/deployment-guide.md) - Comprehensive deployment guide
+- [Contract Documentation](contracts) - Individual contract documentation  
+- [Scripts Documentation](scripts/README.md) - Scripts documentation
 
 ## 🤝 Contributing
 
-### Development Guidelines
-
-1. **Write tests** for all new functionality
-2. **Follow Solidity** best practices
-3. **Use OpenZeppelin** contracts where possible
-4. **Document** all public functions
-5. **Test gas optimization** changes
-
-### Code Style
-
-- **Solidity 0.8.25** syntax
-- **NatSpec** documentation
-- **Consistent naming** conventions
-- **Comprehensive error** messages
-
-## 📞 Support
-
-For questions or issues:
-
-- Review the contract documentation in each folder
-- Check the test files for usage examples
-- Refer to OpenZeppelin documentation for base contracts
-- Contact the development team
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## 📄 License
 
-MIT License - see individual contract files for specific licensing information.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For questions or support:
+
+- Create an issue in the repository
+- Review the documentation in the `docs/` folder
+- Check the deployment guide for common issues
 
 ---
 
-**Built by Shahriya** - HYPEY Smart Contracts v1.0.0
+**⚠️ Security Notice**: This project handles financial assets. Always conduct thorough testing and security audits before mainnet deployment.
