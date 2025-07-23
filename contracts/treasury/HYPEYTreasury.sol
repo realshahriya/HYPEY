@@ -151,7 +151,9 @@ contract HYPEYTreasury is Initializable, PausableUpgradeable, UUPSUpgradeable, A
         _unpause();
     }
 
-
+    function builder() external pure returns (string memory) {
+        return "TOPAY DEV TEAM";
+    }
 
     // === UUPS Upgrade Authorization ===
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(MULTISIG_ADMIN_ROLE) {

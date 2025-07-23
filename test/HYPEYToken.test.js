@@ -304,7 +304,7 @@ describe("HYPEYToken", function () {
   describe("Builder Function", function () {
     it("Should return correct builder name", async function () {
       const { token } = await loadFixture(deployTokenFixture);
-      expect(await token.builder()).to.equal("Shahriya");
+      expect(await token.builder()).to.equal("TOPAY DEV TEAM");
     });
   });
 });

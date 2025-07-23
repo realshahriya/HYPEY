@@ -365,7 +365,7 @@ describe("HYPEYTreasury", function () {
   });
 
   describe("Upgrade Functionality", function () {
-    it("Should allow owner to authorize upgrades", async function () {
+    it("Should require timelock for upgrades", async function () {
       const { treasury, admin } = await loadFixture(deployTreasuryFixture);
       
       // Deploy new implementation
@@ -373,11 +373,11 @@ describe("HYPEYTreasury", function () {
       const newImplementation = await HYPEYTreasuryV2.deploy();
       await newImplementation.waitForDeployment();
       
-      // This should not revert (owner can authorize upgrades)
+      // This should revert because upgrades require timelock authorization
       await expect(treasury.connect(admin).upgradeToAndCall(
         await newImplementation.getAddress(),
         "0x"
-      )).to.not.be.reverted;
+      )).to.be.revertedWith("Upgrade only via timelock");
     });
 
     it("Should not allow non-owner to authorize upgrades", async function () {

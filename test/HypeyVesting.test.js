@@ -374,14 +374,14 @@ describe("HypeyVesting", function () {
       
       // Don't fast forward - still before cliff
       await expect(vesting.connect(beneficiary1).claim(0))
-        .to.be.revertedWith("Nothing to claim");
+        .to.be.revertedWith("No tokens available for claim");
     });
 
     it("Should not allow claiming invalid schedule index", async function () {
       const { vesting, beneficiary1 } = await loadFixture(deployVestingFixture);
       
       await expect(vesting.connect(beneficiary1).claim(0))
-        .to.be.revertedWith("Invalid index");
+        .to.be.revertedWith("Invalid vesting schedule index");
     });
 
     it("Should not allow claiming when paused", async function () {
@@ -536,7 +536,7 @@ describe("HypeyVesting", function () {
   describe("Builder Function", function () {
     it("Should return correct builder name", async function () {
       const { vesting } = await loadFixture(deployVestingFixture);
-      expect(await vesting.builder()).to.equal("Shahriya");
+      expect(await vesting.builder()).to.equal("TOPAY DEV TEAM");
     });
   });
 

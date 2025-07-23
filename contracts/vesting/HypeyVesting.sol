@@ -309,7 +309,9 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
         _unpause();
     }
     
-
+    function builder() external pure returns (string memory) {
+        return "TOPAY DEV TEAM";
+    }
     
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(MULTISIG_ADMIN_ROLE) {
         require(msg.sender == address(timelock), "Upgrade only via timelock");

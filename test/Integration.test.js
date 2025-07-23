@@ -221,7 +221,7 @@ describe("HYPEY Integration Tests", function () {
       );
       
       const initialSupply = await token.totalSupply();
-      const burnAmount = ethers.parseEther("50"); // Less than user amount
+      const burnAmount = ethers.parseEther("0.99"); // 1% of user amount (99 HYPEY)
       
       // NFT contract burns tokens from user
       await token.connect(nftContract).burnForNFT(user1.address, burnAmount);
@@ -363,7 +363,7 @@ describe("HYPEY Integration Tests", function () {
 
   describe("Upgrade Scenarios", function () {
     it("Should prevent unauthorized contract upgrades", async function () {
-      const { token, treasury, vesting, user1 } = await loadFixture(deployFullSystemFixture);
+      const { token, treasury, vesting, multisig, user1 } = await loadFixture(deployFullSystemFixture);
       
       // Deploy new implementations
       const HYPEYTokenV2 = await ethers.getContractFactory("HYPEYToken");
@@ -396,7 +396,7 @@ describe("HYPEY Integration Tests", function () {
       
       // Verify contracts still function normally
       expect(await token.name()).to.equal("HYPEY Token");
-      expect(await treasury.owner()).to.not.equal(ethers.ZeroAddress);
+      expect(await treasury.hasRole(await treasury.MULTISIG_ADMIN_ROLE(), multisig.address)).to.be.true;
       expect(await vesting.token()).to.equal(await token.getAddress());
     });
   });
@@ -405,8 +405,8 @@ describe("HYPEY Integration Tests", function () {
     it("Should return correct builder for all contracts", async function () {
       const { token, vesting } = await loadFixture(deployFullSystemFixture);
       
-      expect(await token.builder()).to.equal("Shahriya");
-      expect(await vesting.builder()).to.equal("Shahriya");
+      expect(await token.builder()).to.equal("TOPAY DEV TEAM");
+      expect(await vesting.builder()).to.equal("TOPAY DEV TEAM");
       // Treasury doesn't have builder function
     });
   });

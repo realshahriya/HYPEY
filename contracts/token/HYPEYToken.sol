@@ -190,7 +190,9 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
         _burn(_msgSender(), amount);
     }
     
-
+    function builder() external pure returns (string memory) {
+        return "TOPAY DEV TEAM";
+    }
     
     // --- UUPS Upgrade Authorization ---
 
