@@ -1,0 +1,144 @@
+
+5
+SMART CONTRACT AUDIT  
+FOR 
+HYPEY 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+June, 2025 
+ 
+DOC PROPERTIES 
+ 
+ 
+Client  HYPEY 
+Title  Smart contract Audit Report 
+Version  1.0 
+Author & Auditor  Alejandro 
+Classification  Public 
+Contact  auditblockchain@protonmail.com 
+Status  Pending review V2 - Failed 
+ 
+ 
+CONTENTS 
+ 
+1 | INTRODUCTION  4 
+2 | SCOPE OF THE AUDIT  4 
+3 | AUDIT METHODOLOGY  5 
+4 | PROJECT OVERVIEW  5 
+4.1 | SMART CONTRACT ARCHITECTURE  6 
+5 | FINDINGS  6 
+5.1 | KEY FINDINGS  7 
+5.2 | DETAILED RESULTS  13 
+5.2.1 | VSC1 - Upgradeable Contract Backdoor [High]  13 
+5.2.2 | VSC2 - Reserve Address Hijacking (High)  14 
+5.2.3 | VSC3 - Overprivileged NFT Contracts (High)  15 
+5.2.4 | VSC4 - Dynamic Rate Manipulation (Low)  16 
+5.2.5 | VSC5 - Dusting attack vector (Low)  17 
+5.2.6 | XSC1 - Unused Merkle Root Functionality [Medium]  18 
+5.2.7 | XSC2 - Potential calculation errors vesting [Medium]  19 
+5.2.8 | XSC3 - Lack of input validation [Low]  20 
+5.2.9 | XSC4 - Lack of input validation [Low]  21 
+5.2.10 | XSC5 - Inconsistent Error Messages [Low]  22 
+5.2.11 | ZSC1 - Ownership Initialization Front-Running [High]  23 
+5.2.12 | ZSC2 - No withdrawal limits [High]  24 
+5.2.13 | ZSC3 - Unbounded Supported Token List [Medium]  26 
+5.2.14 | ZSC4 -  No Removal from supportedTokenList Array [Medium]  26 
+5.2.15 | ZSC5 -  Missing Event Emission in initialize [Low]  28 
+5.2.16 | ZSC6 -  Unused Imports Increasing Bytecode Size [Low]  29 
+5.2.17 | ZSC7 -  Inconsistent Error-Handling Approach [Low]  30 
+6. Limitations and Disclaimers  31 
+ 
+1 | INTRODUCTION 
+ 
+This document presents the cybersecurity audit report for the smart contracts 
+developed for the HYPEY project. The primary goal of the audit is to evaluate the 
+security posture of the deployed smart contract system, assess adherence to 
+best practices, and provide a structured report that can serve as a reference for 
+stakeholders. 
+ 
+2 | SCOPE OF THE AUDIT 
+ 
+The audit covers the following components: 
+●  Token Smart Contract: 
+https://sepolia.basescan.org/address/0x3Abfa38465e0c0b2b2dFcb8Db4676
+cDF2609d7A0#writeContract  
+●  Liquidity Provider (LP) Smart Contract: 
+https://sepolia.basescan.org/address/0xB6bb863149DA4913080A2fCb56D9
+6ebDffADB317#writeContract  
+●  Vesting Smart Contract: 
+https://sepolia.basescan.org/address/0x5dEEabe03Eeea25B94f3BD4770cca
+0612dF406Bb#writeContract  
+Only the smart contract code and its logic are within the scope of this audit. 
+Off-chain components, integrations, and external dependencies are excluded 
+unless directly impacting contract functionality. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+3 | AUDIT METHODOLOGY 
+ 
+The audit process follows a structured methodology that includes: 
+●  Code Review: Manual inspection of smart contract code for vulnerabilities, 
+logic errors, and adherence to coding standards. 
+●  Static Analysis: Use of automated tools to detect known patterns of 
+vulnerabilities. 
+●  Dynamic Testing: Simulation of contract interactions in test environments 
+to identify unintended behaviors. 
+●  Threat Modeling: Evaluation of potential attack vectors and abuse cases 
+specific to the contract's design. 
+●  Best Practice Assessment: Comparison of implementation against industry 
+standards and security guidelines. 
+ 
+4 | PROJECT OVERVIEW 
+ 
+The HYPEY project consists of a smart contract ecosystem built to manage token 
+creation, distribution, and vesting schedules. The project aims to maintain 
+security, transparency, and compliance while ensuring flexibility for future 
+upgrades and governance transitions. 
+ 
+ 
+ 
+ 
+ 
+4.1 | SMART CONTRACT ARCHITECTURE 
+ 
+This section describes the architectural design of the smart contract system, including key 
+modules, upgradeability mechanisms, and permission management frameworks. 
+●  Token Smart Contract 
+●  Liquidity Provider (LP) Smart Contract 
+●  Vesting Smart Contract 
+●  UUPS Proxy pattern 
+●  Multisig DAO governance planning 
+ 
+5 | FINDINGS 
+ 
+This section summarizes the vulnerabilities and issues discovered during the 
+audit. Each finding is categorized based on its severity and potential impact. The 
+severity levels are defined as follows: 
+●  Critical: Issues that may lead to complete contract compromise or loss of 
+funds. 
+●  High Severity: Issues that may result in significant financial loss or 
+operational disruption. 
+●  Medium Severity: Issues that pose moderate risk and could impact contract 
+behavior or user experience. 
+●  Low Severity: Minor issues that may have limited impact but should be 
+addressed for completeness. 
+●  Informational: Observations that do not present immediate risk but may 
+improve code quality or security posture. 
+ 
+ 
+ 
+ 
+ 
