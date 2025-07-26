@@ -192,5 +192,8 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     
     // --- UUPS Upgrade Authorization ---
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
+        require(msg.sender == address(timelock), "Upgrade only via timelock");
+        require(hasRole(MULTISIG_ADMIN_ROLE, msg.sender), "Upgrade requires multisig admin");
+    }
 }
