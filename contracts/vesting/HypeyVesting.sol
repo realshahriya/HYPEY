@@ -22,6 +22,7 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
         uint256 cliffUnlockPercent;
     }
 
+    address public immutable trustedInitializer;
     IERC20Upgradeable public token;
     bytes32 public merkleRoot;
     bool public ownerInitialized;
@@ -38,11 +39,13 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
+        trustedInitializer = msg.sender;
         _disableInitializers();
     }
 
     // Step 1: Initialize with token and initial owner
     function initialize(address tokenAddress, address _owner, address payable timelockAddress) public initializer {
+        require(msg.sender == trustedInitializer, "Unauthorized initializer");
         require(tokenAddress != address(0), "Invalid token address"); // ZSC7: Consistent error handling
         require(_owner != address(0), "Invalid owner address"); // ZSC7: Consistent error handling
         require(timelockAddress != address(0), "Invalid timelock address"); // ZSC7: Consistent error handling
@@ -66,12 +69,7 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
 
     // Step 2: Assign ownership after deployment (once only, optional if owner set above)
     // Only allow initializeOwner if not already initialized
-    function initializeOwner(address _owner) external {
-        require(!ownerInitialized, "Owner already initialized");
-        require(_owner != address(0), "Invalid owner address");
-        _transferOwnership(_owner);
-        ownerInitialized = true;
-    }
+
 
     function setMerkleRoot(bytes32 newRoot) external onlyOwner {
         merkleRoot = newRoot;
@@ -88,10 +86,13 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
         uint256 cliffUnlockPercent
     ) external onlyRole(MULTISIG_ADMIN_ROLE) {
         require(beneficiary != address(0), "Invalid beneficiary address"); // XSC3: Input validation
+        require(totalAmount > 0, "Total amount must be greater than zero");
+        require(start >= block.timestamp, "Start time cannot be in the past");
+        require(cliffDuration <= duration, "Cliff longer than duration");
         require(duration > 0 && slicePeriodSeconds > 0, "Invalid duration or slice");
         require(cliffUnlockPercent <= 100, "Invalid cliff %");
         require(totalAmount > 0, "Total amount must be greater than 0"); // XSC3: Input validation
-        require(start > 0, "Start time must be greater than 0"); // XSC3: Input validation
+        require(start >= block.timestamp, "Start time cannot be in the past"); // XSC3: Input validation
         require(cliffDuration <= duration, "Cliff duration cannot exceed total duration"); // XSC3: Input validation
         
         vestingSchedules[beneficiary].push(
@@ -123,7 +124,13 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
     ) external {
         require(merkleRoot != bytes32(0), "Merkle root not set");
         bytes32 leaf = keccak256(abi.encodePacked(
-            beneficiary, totalAmount, start, cliffDuration, duration, slicePeriodSeconds, cliffUnlockPercent
+            beneficiary,
+            totalAmount,
+            start,
+            cliffDuration,
+            duration,
+            slicePeriodSeconds,
+            cliffUnlockPercent
         ));
         require(MerkleProofUpgradeable.verify(merkleProof, merkleRoot, leaf), "Invalid merkle proof");
         require(beneficiary != address(0), "Invalid beneficiary address");
@@ -246,7 +253,7 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
             require(durations[i] > 0 && slicePeriodSeconds[i] > 0, "Invalid duration or slice");
             require(cliffUnlockPercents[i] <= 100, "Invalid cliff %");
             require(totalAmounts[i] > 0, "Total amount must be greater than 0");
-            require(starts[i] > 0, "Start time must be greater than 0");
+            require(starts[i] >= block.timestamp, "Start time cannot be in the past");
             require(cliffDurations[i] <= durations[i], "Cliff duration cannot exceed total duration");
             
             vestingSchedules[beneficiaries[i]].push(
@@ -310,7 +317,10 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
         return "TOPAY DEV TEAM";
     }
     
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(MULTISIG_ADMIN_ROLE) {
+    // === UUPS Upgrade Authorization ===
+    // VSC1: Upgradeable Contract Backdoor - Require timelock AND multisig
+    function _authorizeUpgrade(address newImplementation) internal override {
         require(msg.sender == address(timelock), "Upgrade only via timelock");
+        require(hasRole(MULTISIG_ADMIN_ROLE, tx.origin), "Upgrade requires multisig admin");
     }
 }

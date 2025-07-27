@@ -4,8 +4,10 @@ pragma solidity ^0.8.25;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 
-contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, AccessControlUpgradeable {
     uint256 public constant INITIAL_SUPPLY = 3_000_000_000 * 10**18;
     uint256 public constant MIN_EXEMPT_AMOUNT = 100 * 10**18;
 
@@ -17,38 +19,50 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     mapping(address => bool) public approvedPlatforms;
     mapping(address => bool) public approvedNFTContracts;
     
+    // VSC1: Timelock and multisig for upgrades
+    bytes32 public constant MULTISIG_ADMIN_ROLE = keccak256("MULTISIG_ADMIN_ROLE");
+    TimelockControllerUpgradeable public timelock;
+    
     // Events for audit compliance
     event ReserveBurnAddressChanged(address indexed oldAddress, address indexed newAddress);
     event BurnRateChanged(uint256 oldRate, uint256 newRate);
     event ExemptStatusChanged(address indexed wallet, bool exempt);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+    address public immutable trustedInitializer;
+
     constructor() {
+        trustedInitializer = msg.sender;
         _disableInitializers();
     }
 
     /// Step 1: Initialize token and supply
-    function initialize(address _reserveBurnAddress) public initializer {
+    function initialize(address _reserveBurnAddress, address timelockAddress, address initialOwner) public initializer {
+        require(msg.sender == trustedInitializer, "Unauthorized initializer");
         require(_reserveBurnAddress != address(0), "Invalid reserve burn address");
+        require(timelockAddress != address(0), "Invalid timelock address");
+        require(initialOwner != address(0), "Invalid initial owner");
 
         __ERC20_init("HYPEY Token", "HYPEY");
-        __Ownable_init(); // Required for layout but doesn't set owner
+        __Ownable_init();
         __UUPSUpgradeable_init();
+        __AccessControl_init();
 
+        _transferOwnership(initialOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(MULTISIG_ADMIN_ROLE, initialOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, timelockAddress);
+        _grantRole(MULTISIG_ADMIN_ROLE, timelockAddress);
+
+        timelock = TimelockControllerUpgradeable(payable(timelockAddress));
         reserveBurnAddress = _reserveBurnAddress;
         burnRateBasisPoints = 100; // Default to 1%
 
         _mint(address(this), INITIAL_SUPPLY); // Mint 3B to contract
-    }
-
-    /// Step 2: Assign ownership after deployment (once only)
-    function initializeOwner(address _owner) external {
-        require(!ownerInitialized, "Owner already initialized");
-        require(_owner != address(0), "Invalid owner address");
-
-        _transferOwnership(_owner);
         ownerInitialized = true;
     }
+
+
 
     // --- Transfer Overrides with Burn Logic ---
 
@@ -191,9 +205,9 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     }
     
     // --- UUPS Upgrade Authorization ---
-
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
+    // VSC1: Upgradeable Contract Backdoor - Require timelock AND multisig
+    function _authorizeUpgrade(address newImplementation) internal override {
         require(msg.sender == address(timelock), "Upgrade only via timelock");
-        require(hasRole(MULTISIG_ADMIN_ROLE, msg.sender), "Upgrade requires multisig admin");
+        require(hasRole(MULTISIG_ADMIN_ROLE, tx.origin), "Upgrade requires multisig admin");
     }
 }

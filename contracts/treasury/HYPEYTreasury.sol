@@ -27,12 +27,16 @@ contract HYPEYTreasury is Initializable, PausableUpgradeable, UUPSUpgradeable, A
     event TreasuryInitialized(address indexed admin, address indexed timelock); // ZSC5: Missing event emission
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+    address public immutable trustedInitializer;
+
     constructor() {
+        trustedInitializer = msg.sender;
         _disableInitializers();
     }
 
     // Step 1: Initialize with admin (will be initial owner)
     function initialize(address admin, address timelockAddress) public initializer {
+        require(msg.sender == trustedInitializer, "Unauthorized initializer");
         require(admin != address(0), "Invalid admin address"); // ZSC7: Consistent error handling
         require(timelockAddress != address(0), "Invalid timelock address"); // ZSC7: Consistent error handling
         
@@ -52,15 +56,7 @@ contract HYPEYTreasury is Initializable, PausableUpgradeable, UUPSUpgradeable, A
         emit TreasuryInitialized(admin, timelockAddress); // ZSC5: Missing event emission
     }
 
-    // Step 2: Assign ownership after deployment (once only, optional if set above)
-    // Only allow initializeOwner if not already initialized
-    function initializeOwner(address _owner) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!ownerInitialized, "Owner already initialized");
-        require(_owner != address(0), "Invalid owner address");
-        _grantRole(DEFAULT_ADMIN_ROLE, _owner);
-        _grantRole(MULTISIG_ADMIN_ROLE, _owner);
-        ownerInitialized = true;
-    }
+
 
     // === Supported Token Management ===
     function addSupportedToken(address token) external onlyRole(MULTISIG_ADMIN_ROLE) {
@@ -154,7 +150,9 @@ contract HYPEYTreasury is Initializable, PausableUpgradeable, UUPSUpgradeable, A
     }
 
     // === UUPS Upgrade Authorization ===
+    // VSC1: Upgradeable Contract Backdoor - Require timelock AND multisig
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(MULTISIG_ADMIN_ROLE) {
         require(msg.sender == address(timelock), "Upgrade only via timelock");
+        require(hasRole(MULTISIG_ADMIN_ROLE, tx.origin), "Upgrade requires multisig admin");
     }
 }
