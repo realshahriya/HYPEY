@@ -27,8 +27,10 @@ contract HYPEYTreasury is Initializable, PausableUpgradeable, UUPSUpgradeable, A
     event TreasuryInitialized(address indexed admin, address indexed timelock); // ZSC5: Missing event emission
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable trustedInitializer;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         trustedInitializer = msg.sender;
         _disableInitializers();

@@ -36,18 +36,13 @@ async function main() {
   // Deploy HYPEYToken with proxy
   console.log("🪙 Deploying HYPEYToken...");
   const HYPEYToken = await ethers.getContractFactory("HYPEYToken");
-  const token = await upgrades.deployProxy(HYPEYToken, [reserveBurnAddress], {
+  const token = await upgrades.deployProxy(HYPEYToken, [reserveBurnAddress, timelockAddress, multisigAddress], {
     initializer: "initialize",
     kind: "uups",
   });
   await token.waitForDeployment();
   const tokenAddress = await token.getAddress();
   console.log(`   ✅ HYPEYToken deployed at: ${tokenAddress}`);
-
-  // Initialize token owner
-  console.log("   🔑 Initializing token owner...");
-  await token.initializeOwner(multisigAddress);
-  console.log("   ✅ Token owner initialized");
 
   // Deploy HYPEYTreasury with proxy
   console.log("\n🏦 Deploying HYPEYTreasury...");

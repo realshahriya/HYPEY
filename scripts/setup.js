@@ -1,108 +1,82 @@
-const { ethers } = require("hardhat");
-require("dotenv").config();
+#!/usr/bin/env node
 
-async function main() {
-  console.log("🔧 Setting up HYPEY Token Ecosystem...\n");
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
 
-  // Get contract addresses from environment
-  const tokenAddress = process.env.TOKEN_ADDRESS;
-  const treasuryAddress = process.env.TREASURY_ADDRESS;
-  const vestingAddress = process.env.VESTING_ADDRESS;
-  const multisigAddress = process.env.MULTISIG_ADDRESS;
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-  if (!tokenAddress || !treasuryAddress || !vestingAddress || !multisigAddress) {
-    throw new Error("Missing contract addresses in .env file. Run deploy.js first.");
-  }
-
-  // Get signers
-  const [deployer] = await ethers.getSigners();
-  
-  console.log("📋 Setup Configuration:");
-  console.log(`   Token: ${tokenAddress}`);
-  console.log(`   Treasury: ${treasuryAddress}`);
-  console.log(`   Vesting: ${vestingAddress}`);
-  console.log(`   Multisig: ${multisigAddress}`);
-  console.log(`   Deployer: ${await deployer.getAddress()}`);
-  console.log("");
-
-  // Check if deployer is the same as multisig
-  const deployerAddress = await deployer.getAddress();
-  if (deployerAddress.toLowerCase() !== multisigAddress.toLowerCase()) {
-    console.log("⚠️  Warning: Deployer is not the multisig address.");
-    console.log("   For testnet, make sure you're using the correct private key.");
-    console.log("   Attempting to continue with deployer account...");
-  }
-
-  // Get contract instances
-  const token = await ethers.getContractAt("HYPEYToken", tokenAddress);
-  const treasury = await ethers.getContractAt("HYPEYTreasury", treasuryAddress);
-  const vesting = await ethers.getContractAt("HypeyVesting", vestingAddress);
-
-  // Check current owner
-  const currentOwner = await token.owner();
-  console.log(`   Current token owner: ${currentOwner}`);
-  
-  if (currentOwner.toLowerCase() !== deployerAddress.toLowerCase()) {
-    console.log("❌ Cannot proceed: Deployer is not the token owner.");
-    console.log("   The token owner is the multisig address.");
-    console.log("   To run setup, you need to:");
-    console.log("   1. Use the multisig private key, or");
-    console.log("   2. Have the multisig call these functions manually");
-    return;
-  }
-
-  // Setup initial token distribution
-  console.log("💰 Setting up initial token distribution...");
-  
-  // Distribute tokens to treasury (500M HYPEY)
-  const treasuryAmount = ethers.parseEther("500000000");
-  console.log(`   Distributing ${ethers.formatEther(treasuryAmount)} HYPEY to Treasury...`);
-  await token.distributeInitialSupply(treasuryAddress, treasuryAmount);
-  
-  // Distribute tokens to vesting (1B HYPEY)
-  const vestingAmount = ethers.parseEther("1000000000");
-  console.log(`   Distributing ${ethers.formatEther(vestingAmount)} HYPEY to Vesting...`);
-  await token.distributeInitialSupply(vestingAddress, vestingAmount);
-  
-  // Keep remaining in contract for future use (1.5B HYPEY)
-  console.log("   ✅ Initial distribution complete");
-
-  // Setup burn exemptions
-  console.log("\n🔥 Setting up burn exemptions...");
-  await token.setExemptFromBurn(treasuryAddress, true);
-  await token.setExemptFromBurn(vestingAddress, true);
-  await token.setExemptFromBurn(tokenAddress, true); // Contract itself
-  console.log("   ✅ Burn exemptions set for system contracts");
-
-  // Verify setup
-  console.log("\n🔍 Verifying setup...");
-  
-  const treasuryBalance = await token.balanceOf(treasuryAddress);
-  const vestingBalance = await token.balanceOf(vestingAddress);
-  const contractBalance = await token.balanceOf(tokenAddress);
-  
-  console.log(`   Treasury Balance: ${ethers.formatEther(treasuryBalance)} HYPEY`);
-  console.log(`   Vesting Balance: ${ethers.formatEther(vestingBalance)} HYPEY`);
-  console.log(`   Contract Balance: ${ethers.formatEther(contractBalance)} HYPEY`);
-  
-  const treasuryExempt = await token.exemptFromBurn(treasuryAddress);
-  const vestingExempt = await token.exemptFromBurn(vestingAddress);
-  
-  console.log(`   Treasury Burn Exempt: ${treasuryExempt ? '✅' : '❌'}`);
-  console.log(`   Vesting Burn Exempt: ${vestingExempt ? '✅' : '❌'}`);
-
-  console.log("\n🎉 Setup Complete!");
-  console.log("The HYPEY ecosystem is ready for use.");
+function question(query) {
+  return new Promise(resolve => rl.question(query, resolve));
 }
 
-// Execute setup
-if (require.main === module) {
-  main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("❌ Setup failed:", error);
-      process.exit(1);
-    });
+async function setupEnvironment() {
+  console.log('🚀 HYPEY Contract Deployment Setup\n');
+  
+  const envPath = path.join(__dirname, '..', '.env');
+  let envContent = '';
+  
+  if (fs.existsSync(envPath)) {
+    envContent = fs.readFileSync(envPath, 'utf8');
+  }
+  
+  console.log('Please provide the following information for testnet deployment:\n');
+  
+  // Get Infura/Alchemy URL
+  const sepoliaUrl = await question('Enter your Sepolia RPC URL (e.g., Infura/Alchemy): ');
+  
+  // Get private key
+  console.log('\n⚠️  IMPORTANT: Never share your private key. This will be stored locally in .env');
+  const privateKey = await question('Enter your wallet private key (without 0x prefix): ');
+  
+  // Get Etherscan API key
+  const etherscanKey = await question('Enter your Etherscan API key (for contract verification): ');
+  
+  // Get multisig address
+  const multisigAddress = await question('Enter the multisig/admin wallet address: ');
+  
+  // Get reserve burn address
+  const reserveBurnAddress = await question('Enter the reserve burn address: ');
+  
+  // Create .env content
+  const newEnvContent = `# Network Configuration
+SEPOLIA_URL=${sepoliaUrl}
+MAINNET_URL=https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID
+
+# Private Key (DO NOT COMMIT TO GIT - ADD .env TO .gitignore)
+PRIVATE_KEY=${privateKey}
+
+# Etherscan API Key for contract verification
+ETHERSCAN_API_KEY=${etherscanKey}
+
+# Deployment Configuration
+MULTISIG_ADDRESS=${multisigAddress}
+RESERVE_BURN_ADDRESS=${reserveBurnAddress}
+
+# Deployed Contract Addresses (will be populated after deployment)
+TOKEN_ADDRESS=
+TREASURY_ADDRESS=
+VESTING_ADDRESS=
+TIMELOCK_ADDRESS=
+
+# Gas Configuration
+REPORT_GAS=true
+`;
+
+  // Write to .env file
+  fs.writeFileSync(envPath, newEnvContent);
+  
+  console.log('\n✅ Environment configuration saved to .env');
+  console.log('\n📋 Next steps:');
+  console.log('1. Make sure you have testnet ETH in your wallet');
+  console.log('2. Run: npm run deploy:sepolia');
+  console.log('3. Run: npm run verify:sepolia (after deployment)');
+  console.log('\n🔒 Security reminder: Never commit your .env file to version control!');
+  
+  rl.close();
 }
 
-module.exports = main;
+setupEnvironment().catch(console.error);

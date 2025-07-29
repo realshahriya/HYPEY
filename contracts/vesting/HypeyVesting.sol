@@ -22,6 +22,7 @@ contract HypeyVesting is Initializable, OwnableUpgradeable, PausableUpgradeable,
         uint256 cliffUnlockPercent;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable trustedInitializer;
     IERC20Upgradeable public token;
     bytes32 public merkleRoot;

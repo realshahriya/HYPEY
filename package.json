@@ -11,6 +11,7 @@
     "deploy": "hardhat run scripts/deploy.js",
     "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
     "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.js --network baseSepolia",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
     "verify": "hardhat run scripts/verify.js",
     "verify:sepolia": "hardhat run scripts/verify.js --network sepolia",

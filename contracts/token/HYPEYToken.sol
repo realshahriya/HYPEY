@@ -29,8 +29,10 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, Ac
     event ExemptStatusChanged(address indexed wallet, bool exempt);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable trustedInitializer;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         trustedInitializer = msg.sender;
         _disableInitializers();
