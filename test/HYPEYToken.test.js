@@ -4,12 +4,20 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("HYPEYToken", function () {
   async function deployTokenFixture() {
-    const [owner, reserveBurn, platform, nftContract, user1, user2] = await ethers.getSigners();
+    const [owner, reserveBurn, platform, nftContract, user1, user2, timelockAdmin] = await ethers.getSigners();
+
+    // Deploy a TimelockController for the initializer
+    const minDelay = 0;
+    const proposers = [timelockAdmin.address];
+    const executors = [timelockAdmin.address];
+    const Timelock = await ethers.getContractFactory("TimelockControllerUpgradeable");
+    const timelock = await Timelock.deploy(minDelay, proposers, executors);
+    await timelock.waitForDeployment();
 
     const HYPEYToken = await ethers.getContractFactory("HYPEYToken");
     const token = await upgrades.deployProxy(
       HYPEYToken,
-      [reserveBurn.address],
+      [reserveBurn.address, timelock.target, owner.address],
       {
         initializer: "initialize",
         kind: "uups",
@@ -28,6 +36,8 @@ describe("HYPEYToken", function () {
       nftContract,
       user1,
       user2,
+      timelock,
+      timelockAdmin,
     };
   }
 
@@ -302,5 +312,57 @@ describe("HYPEYToken", function () {
       const { token } = await loadFixture(deployTokenFixture);
       expect(await token.builder()).to.equal("TOPAY DEV TEAM");
     });
+  });
+});
+
+describe("DEX Buy/Sell Tax Logic", function () {
+  it("Should apply 0% tax on buys from DEX pair", async function () {
+    const { token, owner, user1, user2 } = await loadFixture(deployTokenFixture);
+    // Simulate DEX pair
+    await token.connect(owner).setDexPair(user1.address);
+    // Transfer from DEX pair (buy)
+    const amount = ethers.parseEther("1000");
+    await token.connect(owner).distributeInitialSupply(user1.address, amount);
+    await token.connect(user1).transfer(user2.address, amount);
+    // user1 is DEX pair, user2 is buyer
+    expect(await token.balanceOf(user2.address)).to.equal(amount);
+  });
+
+  it("Should apply 4% sell tax during the day", async function () {
+    const { token, owner, user1, user2, reserveBurn } = await loadFixture(deployTokenFixture);
+    await token.connect(owner).setDexPair(user2.address);
+    await token.connect(owner).setNightMode(false); // Day
+    const amount = ethers.parseEther("1000");
+    await token.connect(owner).distributeInitialSupply(user1.address, amount);
+    const initialReserve = await token.balanceOf(reserveBurn.address);
+    const initialSupply = await token.totalSupply();
+    // user1 sells to DEX pair (user2)
+    await token.connect(user1).transfer(user2.address, amount);
+    const burnAmount = (amount * 400n) / 10000n;
+    const burnNow = burnAmount / 2n;
+    const toReserve = burnAmount - burnNow;
+    const received = amount - burnAmount;
+    expect(await token.balanceOf(user2.address)).to.equal(received);
+    expect(await token.balanceOf(reserveBurn.address)).to.equal(initialReserve + toReserve);
+    expect(await token.totalSupply()).to.equal(initialSupply - burnNow);
+  });
+
+  it("Should apply 16% sell tax at night", async function () {
+    const { token, owner, user1, user2, reserveBurn } = await loadFixture(deployTokenFixture);
+    await token.connect(owner).setDexPair(user2.address);
+    await token.connect(owner).setNightMode(true); // Night
+    const amount = ethers.parseEther("1000");
+    await token.connect(owner).distributeInitialSupply(user1.address, amount);
+    const initialReserve = await token.balanceOf(reserveBurn.address);
+    const initialSupply = await token.totalSupply();
+    // user1 sells to DEX pair (user2)
+    await token.connect(user1).transfer(user2.address, amount);
+    const burnAmount = (amount * 1600n) / 10000n;
+    const burnNow = burnAmount / 2n;
+    const toReserve = burnAmount - burnNow;
+    const received = amount - burnAmount;
+    expect(await token.balanceOf(user2.address)).to.equal(received);
+    expect(await token.balanceOf(reserveBurn.address)).to.equal(initialReserve + toReserve);
+    expect(await token.totalSupply()).to.equal(initialSupply - burnNow);
   });
 });

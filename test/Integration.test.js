@@ -27,14 +27,15 @@ describe("HYPEY Integration Tests", function () {
     const HYPEYToken = await ethers.getContractFactory("HYPEYToken");
     const token = await upgrades.deployProxy(
       HYPEYToken,
-      [reserveBurn.address],
+      [reserveBurn.address, await timelock.getAddress(), multisig.address],
       {
         initializer: "initialize",
         kind: "uups",
       }
     );
     await token.waitForDeployment();
-    await token.initializeOwner(multisig.address);
+    // Remove or comment out this line:
+    // await token.initializeOwner(multisig.address);
 
     // 2. Deploy HYPEYTreasury
     const HYPEYTreasury = await ethers.getContractFactory("HYPEYTreasury");

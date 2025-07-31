@@ -81,6 +81,19 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, Ac
 
     bool public dynamicBurnEnabled;
 
+    address public dexPair;
+    bool public isNight;
+    uint256 public constant DAY_SELL_TAX_BPS = 400; // 4%
+    uint256 public constant NIGHT_SELL_TAX_BPS = 1600; // 16%
+
+    function setDexPair(address _pair) external onlyOwner {
+        require(_pair != address(0), "Invalid pair address");
+        dexPair = _pair;
+    }
+    function setNightMode(bool _isNight) external onlyOwner {
+        isNight = _isNight;
+    }
+
     function _transferWithBurn(address sender, address recipient, uint256 amount) internal {
         if (exemptFromBurn[sender] || exemptFromBurn[recipient]) {
             super._transfer(sender, recipient, amount);
@@ -91,14 +104,30 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, Ac
         if (minBurnAmount < MIN_EXEMPT_AMOUNT) {
             minBurnAmount = MIN_EXEMPT_AMOUNT;
         }
-        if (amount < minBurnAmount || burnRateBasisPoints == 0) {
+        if (amount < minBurnAmount) {
             super._transfer(sender, recipient, amount);
             return;
         }
-        if (dynamicBurnEnabled) {
-            _updateDynamicBurnRate();
+        uint256 taxBps = 0;
+        if (dexPair != address(0)) {
+            if (sender == dexPair) {
+                // Buy: 0% tax
+                taxBps = 0;
+            } else if (recipient == dexPair) {
+                // Sell: 4% day, 16% night
+                taxBps = isNight ? NIGHT_SELL_TAX_BPS : DAY_SELL_TAX_BPS;
+            } else {
+                // Normal transfer
+                taxBps = burnRateBasisPoints;
+            }
+        } else {
+            taxBps = burnRateBasisPoints;
         }
-        uint256 burnAmount = (amount * burnRateBasisPoints) / 10000;
+        if (taxBps == 0) {
+            super._transfer(sender, recipient, amount);
+            return;
+        }
+        uint256 burnAmount = (amount * taxBps) / 10000;
         uint256 burnNow = burnAmount / 2;
         uint256 toReserve = burnAmount - burnNow;
         uint256 sendAmount = amount - burnAmount;
