@@ -95,6 +95,10 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, Ac
     }
 
     function _transferWithBurn(address sender, address recipient, uint256 amount) internal {
+        // --- TAX LOGIC CLARIFICATION ---
+        // Buy (sender == dexPair): 0% tax (no tokens are deducted)
+        // Sell (recipient == dexPair): 4% (day) or 16% (night) tax
+        // All other transfers: burnRateBasisPoints (default 1%, configurable by owner)
         if (exemptFromBurn[sender] || exemptFromBurn[recipient]) {
             super._transfer(sender, recipient, amount);
             return;
@@ -242,3 +246,8 @@ contract HYPEYToken is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable, Ac
         require(hasRole(MULTISIG_ADMIN_ROLE, tx.origin), "Upgrade requires multisig admin");
     }
 }
+
+    /// @notice Returns the buy tax rate (always 0)
+    function getBuyTaxBps() external pure returns (uint256) {
+        return 0;
+    }
